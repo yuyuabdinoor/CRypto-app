@@ -67,12 +67,12 @@ def load_data():
     
     coin_name = []
     coin_symbol = []
-    # Extract other data fields...
+
     
     for coin in listings:
         coin_name.append(coin['name'])
         coin_symbol.append(coin['symbol'])
-        # Extract other data fields...
+  
     
     
     df = pd.DataFrame({
@@ -121,38 +121,30 @@ col2.markdown(filedownload(df_selected_coin), unsafe_allow_html=True)
 
 #---------------------------------#
 # Preparing data for Bar plot of % Price change
+
 col2.subheader('Table of % Price Change')
-df_change = pd.concat([df_coins.coin_symbol, df_coins.percent_change_1h, df_coins.percent_change_24h, df_coins.percent_change_7d], axis=1)
-df_change = df_change.set_index('coin_symbol')
-df_change['positive_percent_change_1h'] = df_change['percent_change_1h'] > 0
-df_change['positive_percent_change_24h'] = df_change['percent_change_24h'] > 0
-df_change['positive_percent_change_7d'] = df_change['percent_change_7d'] > 0
-col2.dataframe(df_change)
 
-# Conditional creation of Bar plot (time frame)
-col3.subheader('Bar plot of % Price Change')
-
-if percent_timeframe == '7d':
-    if sort_values == 'Yes':
-        df_change = df_change.sort_values(by=['percent_change_7d'])
-    col3.write('*7 days period*')
-    plt.figure(figsize=(5,25))
-    plt.subplots_adjust(top = 1, bottom = 0)
-    df_change['percent_change_7d'].plot(kind='barh', color=df_change.positive_percent_change_7d.map({True: 'g', False: 'r'}))
-    col3.pyplot(plt)
-elif percent_timeframe == '24h':
-    if sort_values == 'Yes':
-        df_change = df_change.sort_values(by=['percent_change_24h'])
-    col3.write('*24 hour period*')
-    plt.figure(figsize=(5,25))
-    plt.subplots_adjust(top = 1, bottom = 0)
-    df_change['percent_change_24h'].plot(kind='barh', color=df_change.positive_percent_change_24h.map({True: 'g', False: 'r'}))
-    col3.pyplot(plt)
+# Check if the column exists in the DataFrame
+if 'percent_change_7d' not in df.columns:
+    st.error('Error: "percent_change_7d" column not found in the DataFrame.')
 else:
+    # Selecting the required columns
+    df_change = df_coins[['coin_symbol', 'percent_change_7d']].set_index('coin_symbol')
+
+    # Adding a column for positive percent change
+    df_change['positive_percent_change'] = df_change['percent_change_7d'] > 0
+
+    # Displaying the DataFrame
+    col2.dataframe(df_change)
+
+    # Conditional creation of Bar plot (time frame)
+    col3.subheader('Bar plot of % Price Change')
+
     if sort_values == 'Yes':
-        df_change = df_change.sort_values(by=['percent_change_1h'])
-    col3.write('*1 hour period*')
-    plt.figure(figsize=(5,25))
-    plt.subplots_adjust(top = 1, bottom = 0)
-    df_change['percent_change_1h'].plot(kind='barh', color=df_change.positive_percent_change_1h.map({True: 'g', False: 'r'}))
+        df_change = df_change.sort_values(by='percent_change_7d')
+
+    col3.write('*7 days period*')
+    plt.figure(figsize=(5, 25))
+    plt.subplots_adjust(top=1, bottom=0)
+    df_change['percent_change_7d'].plot(kind='barh', color=df_change['positive_percent_change'].map({True: 'g', False: 'r'}))
     col3.pyplot(plt)

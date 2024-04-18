@@ -1,4 +1,4 @@
-Crypto Price App (Using CoinMarket API Keys)
+##**CRYPTO PRICE#****Crypto Price App (Using CoinMarket API Keys)
 This project is a Streamlit web app that retrieves cryptocurrency price data for the top 100 cryptocurrencies from CoinMRKET. 
 
 Features:

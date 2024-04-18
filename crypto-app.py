@@ -10,6 +10,7 @@ import re
 import time
 
 
+
 ## Page expands to full width
 st.set_page_config(layout="wide")
 
@@ -27,7 +28,7 @@ expander_bar = st.expander("About")
 expander_bar.markdown("""
 * **Python libraries:** base64, pandas, streamlit, numpy, matplotlib, seaborn, BeautifulSoup, requests, json, time
 * **Data source:** [CoinMarketCap](http://coinmarketcap.com).
-* **Credit:** Web scraper adapted from the Medium article *[Web Scraping Crypto Prices With Python](https://towardsdatascience.com/web-scraping-crypto-prices-with-python-41072ea5b5bf)* written by [Bryan Feng](https://medium.com/@bryanf).
+
 """)
 
 ## Divide page to 3 columns (col1 = sidebar, col2 and col3 = page contents)
@@ -42,60 +43,48 @@ col1.header('Input Options')
 currency_price_unit = col1.selectbox('Select currency for price', ('USD', 'BTC', 'ETH'))
 
 # Web scraping of CoinMarketCap data
-import re
-import json
 import requests
-from bs4 import BeautifulSoup
-import pandas as pd
+
+API_KEY = '5681d20e-4c1a-4099-8c88-ea7bf61a5305'
 
 def load_data():
-    cmc = requests.get('https://coinmarketcap.com')
-    soup = BeautifulSoup(cmc.content, 'html.parser')
-
-    # Extract JSON data from script tag
-    script_tag = soup.find('script', {'id': '__NEXT_DATA__'})
-    if script_tag is None:
-        raise Exception('Script tag not found')
-    json_data = re.search(r'window\.__NEXT_DATA__=({.*?});', str(script_tag.contents[0])).group(1)
-    json_data = json.loads(json_data)
-
-    listings = json_data['props']['initialState']['cryptocurrency']['listingLatest']['data']
-
+    headers = {
+        'X-CMC_PRO_API_KEY': API_KEY,
+        'Accept': 'application/json'
+    }
+    params = {
+        'limit': 100  # Retrieve data for the top 100 cryptocurrencies
+    }
+    response = requests.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest', headers=headers, params=params)
+    data = response.json()
+    
+    if 'data' not in data:
+        raise Exception('Error retrieving cryptocurrency data from the API')
+    
+    listings = data['data']
+    
     # Extract data for selected cryptocurrencies
-    coins = {}
-    for i in listings:
-      coins[str(i['id'])] = i['slug']
-
+    
     coin_name = []
     coin_symbol = []
-    market_cap = []
-    percent_change_1h = []
-    percent_change_24h = []
-    percent_change_7d = []
-    price = []
-    volume_24h = []
-
-    for i in listings:
-      coin_name.append(i['slug'])
-      coin_symbol.append(i['symbol'])
-      price.append(i['quote']['USD']['price'])
-      percent_change_1h.append(i['quote']['USD']['percent_change_1h'])
-      percent_change_24h.append(i['quote']['USD']['percent_change_24h'])
-      percent_change_7d.append(i['quote']['USD']['percent_change_7d'])
-      market_cap.append(i['quote']['USD']['market_cap'])
-      volume_24h.append(i['quote']['USD']['volume_24h'])
-
-    df = pd.DataFrame(columns=['coin_name', 'coin_symbol', 'market_cap', 'percent_change_1h', 'percent_change_24h', 'percent_change_7d', 'price', 'volume_24h'])
-    df['coin_name'] = coin_name
-    df['coin_symbol'] = coin_symbol
-    df['price'] = price
-    df['percent_change_1h'] = percent_change_1h
-    df['percent_change_24h'] = percent_change_24h
-    df['percent_change_7d'] = percent_change_7d
-    df['market_cap'] = market_cap
-    df['volume_24h'] = volume_24h
+    # Extract other data fields...
+    
+    for coin in listings:
+        coin_name.append(coin['name'])
+        coin_symbol.append(coin['symbol'])
+        # Extract other data fields...
+    
+    
+    df = pd.DataFrame({
+        'coin_name': coin_name,
+        'coin_symbol': coin_symbol,
+    
+    })
     return df
+
+# Load data using the API
 df = load_data()
+
 
 ## Sidebar - Cryptocurrency selections
 sorted_coin = sorted( df['coin_symbol'] )
